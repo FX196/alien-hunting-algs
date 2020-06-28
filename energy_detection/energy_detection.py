@@ -1,4 +1,5 @@
 import zmq
+import pickle
 import time
 import os
 import wget
@@ -7,13 +8,18 @@ from .. import upload
 print("Running")
 
 context = zmq.Context()
-socket = context.socket(zmq.REP)
-socket.bind("tcp://*:5555")
+request_recv_socket = context.socket(zmq.PULL)
+response_send_socket = context.socket(zmq.PUSH)
+request_recv_socket.bind("tcp://*:5555")
 
 print("Socket connected")
 
 while True:
-    data_url = socket.recv_string()
+    serialized = socket.recv()
+    request_dict = pickle.loads(serialized)
+    data_url = request_dict["data_url"]
+    response_addr = request_dict["response_addr"]
+
     print(f"Received request to process {data_url}")
     start = time.time()
     filename = wget.download(data_url)
